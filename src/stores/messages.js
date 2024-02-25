@@ -106,4 +106,17 @@ export default defineStore('messages', {
         .filter((messages) => messages.read === false).length;
     },
   },
+  actions: {
+    // se usan funciones normales para poder acceder al this
+    addMessage(channelId, message) {
+      this.messages.push({
+        id: Math.random(),
+        author: 1,
+        channelId,
+        message,
+        timestamp: new Date().toLocaleDateString(),
+        read: false,
+      });
+    },
+  },
 });

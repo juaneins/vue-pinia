@@ -3,21 +3,21 @@ import { ref, reactive, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import MessageItem from '@/components/MessageItem.vue';
 import useMessagesStore from '@/stores/messages.js';
+import useContactsStore from '@/stores/contacts.js';
 
 const route = useRoute();
 const messagesStore = useMessagesStore();
+const contactsStore = useContactsStore();
+
 const end = ref(null);
 const channelId = ref(null);
 const title = ref('');
-const people = reactive([
-  { id: 1, name: 'Tú', avatar: '/avatars/avatar.jpg' },
-  { id: 2, name: 'Jason', avatar: '/avatars/avatar-02.jpg' },
-  { id: 3, name: 'Janet', avatar: '/avatars/avatar-03.jpg' }
-]);
+const people = reactive([]);
+const message = ref('');
 
 
 const messagesView = computed(() => messagesStore.findMessagesByChannelId(channelId.value).map((message) => {
-  const author = people.find((p) => p.id === message.author);
+  const author = contactsStore.getContactById(message.author);
   if (!author) return message;
   return {
     ...message,
@@ -25,6 +25,11 @@ const messagesView = computed(() => messagesStore.findMessagesByChannelId(channe
     self: author.id === 1
   };
 }));
+
+const addMessage = () => {
+  messagesStore.addMessage(channelId.value, message.value);
+  message.value = '';
+};
 
 const scrollToBottom = () => {
   end.value?.scrollIntoView({
@@ -49,7 +54,7 @@ scrollToBottom();
     <header>
       <h2>{{ title }}</h2>
       <div class="people-list">
-        <div class="people-item" v-for="p in people" :key="p.id">
+        <div class="people-item" v-for="p in contactsStore.contacts" :key="p.id">
           <img :src="p.avatar" :alt="p.name" />
         </div>
       </div>
@@ -59,12 +64,12 @@ scrollToBottom();
         :author="message.author.name" :message="message.message" :time="message.timestamp" :is-self="message.self" />
       <span ref="end"></span>
     </div>
-    <footer>
-      <textarea rows="3"></textarea>
+    <form class="footer" @submit.prevent="addMessage">
+      <textarea rows="3" v-model="message"></textarea>
       <button>
         <Icon icon="carbon:send-alt" />
       </button>
-    </footer>
+    </form>
   </div>
 </template>
 
@@ -96,7 +101,7 @@ scrollToBottom();
     @apply flex flex-col gap-4 p-4 h-full overflow-y-auto;
   }
 
-  footer {
+  .footer {
     @apply flex p-2;
 
     textarea {
